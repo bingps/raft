@@ -69,6 +69,7 @@ cdef extern from "raft/neighbors/ivf_flat_types.hpp" \
         DistanceType metric()
         uint32_t n_lists()
         bool adaptive_centers()
+        device_matrix_view[T, IdxT, row_major] centers()
 
     cpdef cppclass search_params(ann_search_params):
         uint32_t n_probes

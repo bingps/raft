@@ -20,6 +20,7 @@
 # cython: language_level = 3
 
 from libc.stdint cimport int8_t, int64_t, uint8_t, uint64_t
+from libc.stddef cimport size_t
 from libcpp.string cimport string
 
 from pylibraft.common.handle cimport device_resources
@@ -50,7 +51,9 @@ cdef extern from "raft/core/device_mdspan.hpp" namespace "raft" nogil:
         pass
 
     cdef cppclass device_matrix_view[ElementType, IndexType, LayoutType]:
-        pass
+        ElementType* data_handle()
+        size_t rank()
+        size_t extent(size_t r)
 
     cdef device_matrix_view[ElementType, IndexType, LayoutPolicy] \
         make_device_matrix_view[ElementType, IndexType, LayoutPolicy](

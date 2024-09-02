@@ -21,6 +21,8 @@
 import warnings
 
 import numpy as np
+import cupy as cp
+import torch
 
 from cython.operator cimport dereference as deref
 from libc.stdint cimport int8_t, int64_t, uint8_t, uint32_t, uintptr_t
@@ -73,6 +75,14 @@ from pylibraft.neighbors.ivf_flat.cpp.c_ivf_flat cimport (
     search_params,
 )
 
+# cdef extern from "torch/torch.h" namespace "torch" nogil:
+#     cdef cppclass Tensor:
+#         pass
+#     cdef cppclass Dtype:
+#         pass
+#     cdef cppclass Device:
+#         pass
+#     cdef Tensor from_blob(void* data, tuple size, Dtype dtype, Device device)
 
 cdef class IndexParams:
     """
@@ -213,6 +223,16 @@ cdef class IndexFloat(Index):
     def adaptive_centers(self):
         return self.index[0].adaptive_centers()
 
+    @property
+    def centers(self):
+        ptr = self.index[0].centers().data_handle()
+        h = self.index[0].centers().extent(0)
+        w = self.index[0].centers().extent(1) 
+        cdef int64_t ptr_i = <int64_t>ptr
+        mem = cp.cuda.UnownedMemory(ptr_i, h*w*4, owner=None)
+        memptr = cp.cuda.MemoryPointer(mem, offset=0)
+        arr = cp.ndarray((h,w), dtype=cp.float32, memptr=memptr)
+        return torch.as_tensor(arr, device="cuda")
 
 cdef class IndexInt8(Index):
     cdef c_ivf_flat.index[int8_t, int64_t] * index

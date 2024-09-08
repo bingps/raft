@@ -26,6 +26,7 @@ SUPPORTED_DISTANCES = {
     "sqeuclidean": DistanceType.L2Expanded,
     "euclidean": DistanceType.L2SqrtExpanded,
     "inner_product": DistanceType.InnerProduct,
+    "cosine": DistanceType.CosineExpanded,
 
 }
 

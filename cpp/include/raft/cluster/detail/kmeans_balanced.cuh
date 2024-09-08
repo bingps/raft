@@ -135,7 +135,8 @@ inline std::enable_if_t<std::is_floating_point_v<MathT>> predict_core(
                         raft::compose_op<raft::cast_op<LabelT>, raft::key_op>());
       break;
     }
-    case raft::distance::DistanceType::InnerProduct: {
+    case raft::distance::DistanceType::InnerProduct: 
+    case raft::distance::DistanceType::CosineExpanded: {
       // TODO: pass buffer
       rmm::device_uvector<MathT> distances(n_rows * n_clusters, stream, mr);
 
@@ -157,6 +158,11 @@ inline std::enable_if_t<std::is_floating_point_v<MathT>> predict_core(
                    distances.data(),
                    n_clusters,
                    stream);
+
+      // if (params.metric == raft::distance::DistanceType::CosineExpanded) {
+      //   linalg::matrixVectorOp(distances.data(), distances.data(), dataset_norm, n_clusters, n_rows, 
+      //                         true, false, raft::div_op(), stream);
+      // }
 
       auto distances_const_view = raft::make_device_matrix_view<const MathT, IdxT, row_major>(
         distances.data(), n_rows, n_clusters);
@@ -977,7 +983,8 @@ void build_hierarchical(const raft::resources& handle,
   const MathT* dataset_norm = nullptr;
   rmm::device_uvector<MathT> dataset_norm_buf(0, stream, device_memory);
   if (params.metric == raft::distance::DistanceType::L2Expanded ||
-      params.metric == raft::distance::DistanceType::L2SqrtExpanded) {
+      params.metric == raft::distance::DistanceType::L2SqrtExpanded ||
+      params.metric == raft::distance::DistanceType::CosineExpanded) {
     dataset_norm_buf.resize(n_rows, stream);
     for (IdxT offset = 0; offset < n_rows; offset += max_minibatch_size) {
       IdxT minibatch_size = std::min<IdxT>(max_minibatch_size, n_rows - offset);
